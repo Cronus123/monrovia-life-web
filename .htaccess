@@ -1,0 +1,19 @@
+# Monrovia Life: Streets - browser build (written by tools/export_web.ps1)
+AddType application/wasm .wasm
+AddType application/octet-stream .pck
+AddType model/gltf-binary .glb
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/javascript application/javascript application/wasm application/octet-stream model/gltf-binary
+</IfModule>
+
+<IfModule mod_headers.c>
+  # the page, engine and game change with each update: always check for a new version
+  <FilesMatch "\.(html|js|wasm|pck)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # city tiles rarely change: let browsers keep them for a week
+  <FilesMatch "\.glb$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>
