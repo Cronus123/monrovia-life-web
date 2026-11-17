@@ -215,6 +215,14 @@ const engine = new Engine(GODOT_CONFIG);
 	}
 }());
 		</script>
+		<script>
+// Return visits: keep the engine, game and city tiles on the device (sw.js).
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', () => {
+		navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Offline cache unavailable:', err));
+	});
+}
+		</script>
 	</body>
 </html>
 
