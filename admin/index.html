@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Monrovia Admin</title>
+<style>
+:root{--bg:#0b1222;--panel:#121b31;--line:#24304d;--ink:#e8ecf5;--mute:#93a0bd;--accent:#e9b91b;--good:#3ccf8e;--bad:#ef5b5b}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f4f6fb;--panel:#fff;--line:#dfe4ef;--ink:#152038;--mute:#5d6984;--accent:#b88a00;--good:#16915c;--bad:#c93434}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0;flex:1}
+header small{color:var(--mute)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat b{display:block;font-size:26px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mute);font-size:13px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td.num{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{background:transparent;border:1px solid var(--line);border-radius:7px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--mute)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button.danger{color:var(--bad);border-color:var(--bad)}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.login{max-width:360px;margin:60px auto}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--good);display:inline-block}
+.muted{color:var(--mute)}
+.err{color:var(--bad);margin-top:10px;min-height:1.2em}
+.pill{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px}
+.banned{color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:16px;width:min(380px,92vw)}
+dialog::backdrop{background:#0008}
+</style>
+</head>
+<body>
+<header>
+  <h1>Monrovia Life · Admin</h1>
+  <small id="who"></small>
+  <button id="signout" hidden>Sign out</button>
+</header>
+<main>
+  <section id="login" class="card login" hidden>
+    <h2>Admin sign-in</h2>
+    <p class="muted">Use the same account you play with. Only admin accounts can see this page's data.</p>
+    <form id="loginForm">
+      <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+      <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+      <div style="margin-top:14px"><button class="primary" type="submit">Sign in</button></div>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </section>
+
+  <section id="app" hidden>
+    <div class="stats" id="stats" style="margin-bottom:16px"></div>
+    <div class="card">
+      <h2><span class="dot"></span> Online now <span class="muted" id="updated" style="font-weight:400;font-size:13px"></span></h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Player</th><th>Device</th><th>Controls</th><th>Where</th><th>Playing for</th><th>Since (GMT)</th><th></th></tr></thead>
+        <tbody id="online"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>Players</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Player</th><th>Joined (GMT)</th><th>Last seen (GMT)</th><th>Status</th><th></th></tr></thead>
+        <tbody id="players"></tbody>
+      </table></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="banDlg">
+  <form method="dialog" id="banForm">
+    <h2 id="banTitle">Ban player</h2>
+    <label for="banLen">How long</label>
+    <select id="banLen">
+      <option value="1">1 day</option><option value="7" selected>7 days</option>
+      <option value="30">30 days</option><option value="36500">Permanent</option>
+    </select>
+    <label for="banWhy">Reason (the player sees this)</label>
+    <input id="banWhy" maxlength="180" required>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button class="danger" value="ok">Ban</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = 'https://nnrafzauvpbyzesijzsk.supabase.co';
+const SB_KEY = 'sb_publishable_y3OEq46M8tvuUr-9GQJCTg_I0VkzEmW';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const gmt = (t) => t ? new Date(t).toISOString().slice(0,16).replace('T',' ') : '—';
+const dur = (t) => { const m = Math.max(0, Math.round((Date.now() - new Date(t)) / 60000)); return m < 60 ? m + ' min' : Math.floor(m/60) + ' h ' + (m%60) + ' min'; };
+let timer = null;
+
+async function show() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $('login').hidden = false; $('app').hidden = true; $('signout').hidden = true; $('who').textContent = ''; return; }
+  const { data: isAdmin, error } = await sb.rpc('is_admin');
+  if (error || !isAdmin) {
+    await sb.auth.signOut();
+    $('loginErr').textContent = 'That account is not an admin.';
+    $('login').hidden = false; $('app').hidden = true; return;
+  }
+  $('who').textContent = session.user.email;
+  $('signout').hidden = false; $('login').hidden = true; $('app').hidden = false;
+  refresh(); clearInterval(timer); timer = setInterval(refresh, 15000);
+}
+
+async function refresh() {
+  const [st, on, pl] = await Promise.all([
+    sb.rpc('admin_stats'), sb.rpc('admin_online_now'),
+    sb.from('profiles').select('id,display_name,created_at,last_seen,banned_until,ban_reason,is_admin').order('last_seen', { ascending: false, nullsFirst: false }).limit(500)
+  ]);
+  if (st.data) {
+    const s = st.data, d = s.by_device_24h || {};
+    $('stats').innerHTML = [
+      ['Online now', s.online_now], ['Players (24 h)', s.players_24h], ['Sessions (24 h)', s.sessions_24h],
+      ['New players (7 d)', s.new_players_7d], ['All players', s.players_total],
+      ['Phone / tablet / desktop (24 h)', `${d.phone||0} / ${d.tablet||0} / ${d.desktop||0}`]
+    ].map(([k,v]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('');
+  }
+  $('online').innerHTML = (on.data || []).map((r) => `<tr>
+    <td>${esc(r.display_name || '(no name yet)')}</td><td>${esc(r.device || '—')}</td><td>${esc(r.input || '—')}</td>
+    <td>${esc(r.district || '—')}</td><td class="num">${dur(r.started_at)}</td><td class="num">${gmt(r.started_at)}</td>
+    <td class="row"><button data-kick="${r.session_id}">Kick</button><button class="danger" data-ban="${r.user_id}" data-name="${esc(r.display_name||'')}">Ban</button></td></tr>`).join('')
+    || '<tr><td colspan="7" class="muted">Nobody is playing right now.</td></tr>';
+  $('players').innerHTML = (pl.data || []).map((p) => {
+    const banned = p.banned_until && new Date(p.banned_until) > new Date();
+    return `<tr><td>${esc(p.display_name || '(no name yet)')} ${p.is_admin ? '<span class="pill">admin</span>' : ''}</td>
+      <td class="num">${gmt(p.created_at)}</td><td class="num">${gmt(p.last_seen)}</td>
+      <td>${banned ? `<span class="banned">Banned until ${gmt(p.banned_until)}</span> <span class="muted">${esc(p.ban_reason||'')}</span>` : 'OK'}</td>
+      <td>${p.is_admin ? '' : banned ? `<button data-unban="${p.id}">Unban</button>` : `<button class="danger" data-ban="${p.id}" data-name="${esc(p.display_name||'')}">Ban</button>`}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" class="muted">No players yet.</td></tr>';
+  $('updated').textContent = '· updated ' + new Date().toISOString().slice(11,19) + ' GMT';
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.kick) { await sb.rpc('admin_kick', { p_session: b.dataset.kick, p_reason: 'Removed by an admin' }); refresh(); }
+  if (b.dataset.unban) { await sb.rpc('admin_unban', { p_user: b.dataset.unban }); refresh(); }
+  if (b.dataset.ban) {
+    $('banTitle').textContent = 'Ban ' + (b.dataset.name || 'player'); $('banWhy').value = '';
+    $('banDlg').returnValue = ''; $('banDlg').showModal();
+    $('banDlg').onclose = async () => {
+      if ($('banDlg').returnValue !== 'ok') return;
+      const until = new Date(Date.now() + Number($('banLen').value) * 86400000).toISOString();
+      const { error } = await sb.rpc('admin_ban', { p_user: b.dataset.ban, p_until: until, p_reason: $('banWhy').value });
+      if (error) alert(error.message); refresh();
+    };
+  }
+});
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('loginErr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value, password: $('pw').value });
+  if (error) { $('loginErr').textContent = error.message; return; }
+  show();
+});
+$('signout').onclick = async () => { clearInterval(timer); await sb.auth.signOut(); show(); };
+show();
+</script>
+</body>
+</html>
