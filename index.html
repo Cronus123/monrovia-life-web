@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Monrovia Life: Streets - custom HTML shell for the Web City export (Godot's default shell + the offline cache registration). -->
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
@@ -111,7 +112,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":15635156,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":7935180,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -215,8 +216,9 @@ const engine = new Engine(GODOT_CONFIG);
 	}
 }());
 		</script>
-		<script>
+<script>
 // Return visits: keep the engine, game and city tiles on the device (sw.js).
+// (web/shell.html - the Web City preset's custom HTML shell; tools/export_web.ps1 copies sw.js)
 if ('serviceWorker' in navigator) {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Offline cache unavailable:', err));
