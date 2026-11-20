@@ -1,0 +1,16 @@
+# Monrovia Life: Streets - city tiles (written by tools/export_web.ps1)
+# hi/ and lo/: tile meshes (.glb), meta/: each detailed tile's paths, props, trees, signs (.json)
+AddType model/gltf-binary .glb
+AddType application/json .json
+
+<IfModule mod_deflate.c>
+  # tile meshes and metadata compress well
+  AddOutputFilterByType DEFLATE model/gltf-binary application/json
+</IfModule>
+
+<IfModule mod_headers.c>
+  # tiles only change when the city is rebuilt: let browsers keep them for a week
+  <FilesMatch "\.(glb|json)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>

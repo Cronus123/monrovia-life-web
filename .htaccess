@@ -2,18 +2,16 @@
 AddType application/wasm .wasm
 AddType application/octet-stream .pck
 AddType model/gltf-binary .glb
+AddType application/json .json
+AddType text/javascript .js
 
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/javascript application/javascript application/wasm application/octet-stream model/gltf-binary
+  AddOutputFilterByType DEFLATE text/html text/javascript application/javascript application/wasm application/octet-stream model/gltf-binary application/json
 </IfModule>
 
 <IfModule mod_headers.c>
-  # the page, engine and game change with each update: always check for a new version
-  <FilesMatch "\.(html|js|wasm|pck)$">
+  # the page, engine, game and service worker change with each update: always revalidate
+  <FilesMatch "\.(html|js|wasm|pck|json)$">
     Header set Cache-Control "no-cache"
-  </FilesMatch>
-  # city tiles rarely change: let browsers keep them for a week
-  <FilesMatch "\.glb$">
-    Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
 </IfModule>

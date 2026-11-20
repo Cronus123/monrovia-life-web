@@ -1,9 +1,9 @@
 // Monrovia Life: offline cache so return visits start fast.
 // Bump BUILD on every game update (tools/export_web.ps1 or by hand) so
 // players get the new engine/game files; old copies are deleted.
-const BUILD = '98c1412';
+const BUILD = 'e34a30b';
 // Bump TILES only when the city tiles are rebuilt.
-const TILES = 'tiles-1b518706dd98';
+const TILES = 'tiles-8d531fbafc9a';
 
 const CORE = 'core-' + BUILD;
 const CORE_FILES = ['./', 'index.html', 'index.js', 'index.wasm', 'index.pck',
@@ -32,7 +32,9 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(caches.open(TILES).then(async (c) => {
       const hit = await c.match(req, { ignoreSearch: true });
       if (hit) return hit;
-      const res = await fetch(req);
+      // revalidate with the server (a cheap 304 if unchanged): the host lets browsers
+      // keep tiles for a week, and right after a rebuild that copy may be the old tile
+      const res = await fetch(new Request(req, { cache: 'no-cache' }));
       if (res.ok) c.put(req, res.clone());
       return res;
     }));
