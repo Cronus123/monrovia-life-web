@@ -1,9 +1,9 @@
 // Monrovia Life: offline cache so return visits start fast.
 // Bump BUILD on every game update (tools/export_web.ps1 or by hand) so
 // players get the new engine/game files; old copies are deleted.
-const BUILD = 'e34a30b';
+const BUILD = '40dd007';
 // Bump TILES only when the city tiles are rebuilt.
-const TILES = 'tiles-8d531fbafc9a';
+const TILES = 'tiles-3ca0e7399ff7';
 
 const CORE = 'core-' + BUILD;
 const CORE_FILES = ['./', 'index.html', 'index.js', 'index.wasm', 'index.pck',
